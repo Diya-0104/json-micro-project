@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Enrollment Form</title>
+    <style>
+        label { display: block; margin-top: 10px; }
+        input[type=text], input[type=date] { width: 300px; padding: 5px; }
+        button { margin-top: 15px; padding: 8px 15px; }
+    </style>
+    <script>
+        function initializeForm() {
+            document.getElementById("studentForm").reset();
+            document.getElementById("RollNo").disabled = false;
+            document.getElementById("FullName").disabled = true;
+            document.getElementById("Class").disabled = true;
+            document.getElementById("BirthDate").disabled = true;
+            document.getElementById("Address").disabled = true;
+            document.getElementById("EnrollmentDate").disabled = true;
+            document.getElementById("Save").disabled = true;
+            document.getElementById("Update").disabled = true;
+            document.getElementById("Reset").disabled = true;
+            document.getElementById("RollNo").focus();
+        }
+
+        function checkRollNo() {
+            let rollNo = document.getElementById("RollNo").value.trim();
+            if (rollNo === "") {
+                alert("Roll No cannot be empty");
+                return;
+            }
+            let xhr = new XMLHttpRequest();
+            xhr.open("POST", "check_roll.php", true);
+            xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    let res = JSON.parse(xhr.responseText);
+                    if (res.exists) {
+                        // Roll No exists -> Enable Update
+                        document.getElementById("FullName").value = res.data.FullName;
+                        document.getElementById("Class").value = res.data.Class;
+                        document.getElementById("BirthDate").value = res.data.BirthDate;
+                        document.getElementById("Address").value = res.data.Address;
+                        document.getElementById("EnrollmentDate").value = res.data.EnrollmentDate;
+
+                        document.getElementById("RollNo").disabled = true;
+                        document.getElementById("FullName").disabled = false;
+                        document.getElementById("Class").disabled = false;
+                        document.getElementById("BirthDate").disabled = false;
+                        document.getElementById("Address").disabled = false;
+                        document.getElementById("EnrollmentDate").disabled = false;
+                        document.getElementById("Save").disabled = true;
+                        document.getElementById("Update").disabled = false;
+                        document.getElementById("Reset").disabled = false;
+
+                        document.getElementById("FullName").focus();
+                    } else {
+                        // Roll No does NOT exist -> Enable Save
+                        document.getElementById("FullName").disabled = false;
+                        document.getElementById("Class").disabled = false;
+                        document.getElementById("BirthDate").disabled = false;
+                        document.getElementById("Address").disabled = false;
+                        document.getElementById("EnrollmentDate").disabled = false;
+                        document.getElementById("Save").disabled = false;
+                        document.getElementById("Reset").disabled = false;
+
+                        document.getElementById("FullName").focus();
+                    }
+                }
+            };
+            xhr.send("RollNo=" + rollNo);
+        }
+
+        function validateForm() {
+            let fields = ["RollNo","FullName","Class","BirthDate","Address","EnrollmentDate"];
+            for (let i=0;i<fields.length;i++) {
+                if (document.getElementById(fields[i]).value.trim() === "") {
+                    alert(fields[i] + " cannot be empty");
+                    document.getElementById(fields[i]).focus();
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function saveData() {
+            if (!validateForm()) return;
+            let formData = new FormData(document.getElementById("studentForm"));
+            fetch("save_student.php", { method: "POST", body: formData })
+            .then(res => res.text())
+            .then(data => {
+                alert(data);
+                initializeForm();
+            });
+        }
+
+        function updateData() {
+            if (!validateForm()) return;
+            let formData = new FormData(document.getElementById("studentForm"));
+            fetch("update_student.php", { method: "POST", body: formData })
+            .then(res => res.text())
+            .then(data => {
+                alert(data);
+                initializeForm();
+            });
+        }
+
+        function resetForm() {
+            initializeForm();
+        }
+
+        window.onload = initializeForm;
+    </script>
+</head>
+<body>
+    <h2>Student Enrollment Form</h2>
+    <form id="studentForm">
+        <label>Roll No:</label>
+        <input type="text" id="RollNo" name="RollNo" onblur="checkRollNo()">
+
+        <label>Full Name:</label>
+        <input type="text" id="FullName" name="FullName">
+
+        <label>Class:</label>
+        <input type="text" id="Class" name="Class">
+
+        <label>Birth Date:</label>
+        <input type="date" id="BirthDate" name="BirthDate">
+
+        <label>Address:</label>
+        <input type="text" id="Address" name="Address">
+
+        <label>Enrollment Date:</label>
+        <input type="date" id="EnrollmentDate" name="EnrollmentDate">
+
+        <br><br>
+        <button type="button" id="Save" onclick="saveData()">Save</button>
+        <button type="button" id="Update" onclick="updateData()">Update</button>
+        <button type="button" id="Reset" onclick="resetForm()">Reset</button>
+    </form>
+</body>
+</html>
